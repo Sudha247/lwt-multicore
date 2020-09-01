@@ -22,14 +22,12 @@ let set_max_number_of_threads_queued n =
 
 let domains_count = ref 0
 
-(* type 'a task = unit -> 'a  *)
-
-type task_msg =
+type task =
   Task of (int * (unit -> unit))
-  (* | Quit *) (* Come to this later *)
+  | Quit 
 
 type dom = {
-  task_chan : task_msg C.t;
+  task_chan : task C.t;
   mutable domain: unit Domain.t
 }
 
@@ -43,7 +41,7 @@ let rec worker_loop worker =
       task ();  
       Lwt_unix.send_notification id; 
       worker_loop worker
-  (* | Quit -> () *)
+  | Quit -> ()
 
 let make_worker () =
   incr domains_count;
@@ -73,6 +71,12 @@ let get_bounds () = (!min_domains, !max_domains)
 
 let set_bounds (min, max) = 
   if min < 0 || max < min then invalid_arg "Lwt_preemptive.set_bounds";
+  if (max < !domains_count) then begin
+    for _i = 1 to (!domains_count - max) do 
+       let worker = Queue.take workers in 
+       C.send worker.task_chan Quit
+    done;
+  end;
   let diff = min - !domains_count in 
   min_domains := min;
   max_domains := max;
