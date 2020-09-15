@@ -84,12 +84,11 @@ let set_bounds (min, max) =
        C.send worker.task_chan Quit
     done;
   end;
-  let diff = min - !domains_count in 
+  let diff = max - !domains_count in
   min_domains := min;
   max_domains := max;
 
   for _i = 1 to diff do 
-    Printf.printf "I'm adding";
     add_worker (make_worker ())
   done
 
