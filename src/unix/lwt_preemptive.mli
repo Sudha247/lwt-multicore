@@ -62,12 +62,12 @@ val set_bounds : int * int -> unit
   (** [set_bounds (min, max)] set the minimum and the maximum number
       of preemptive threads. *)
 
-val set_max_number_of_threads_queued : int -> unit
+val set_max_number_of_domains_queued : int -> unit
   (** Sets the size of the waiting queue, if no more preemptive
       threads are available. When the queue is full, {!detach} will
       sleep until a thread is available. *)
 
-val get_max_number_of_threads_queued : unit -> int
+val get_max_number_of_domains_queued : unit -> int
   (** Returns the size of the waiting queue, if no more threads are
       available *)
 

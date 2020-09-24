@@ -20,6 +20,7 @@ type 'a node = {
 external seq_of_node : 'a node -> 'a t = "%identity"
 external node_of_seq : 'a t -> 'a node = "%identity"
 
+let lock = Lwt_lock.create_lock ()
 (* +-----------------------------------------------------------------+
    | Operations on nodes                                             |
    +-----------------------------------------------------------------+ *)
@@ -28,14 +29,20 @@ let get node =
   node.node_data
 
 let set node data =
-  node.node_data <- data
+  Lwt_lock.acquire_lock lock;
+  node.node_data <- data;
+  Lwt_lock.release_lock lock
 
 let remove node =
   if node.node_active then begin
+    let is_locked = Lwt_lock.try_acquire lock in 
     node.node_active <- false;
     let seq = seq_of_node node in
     seq.prev.next <- seq.next;
-    seq.next.prev <- seq.prev
+    seq.next.prev <- seq.prev;
+    match is_locked with
+    | true -> Lwt_lock.release_lock lock
+    | false -> ()
   end
 
 (* +-----------------------------------------------------------------+
@@ -62,23 +69,29 @@ let length seq =
   loop seq.next 0
 
 let add_l data seq =
+  Lwt_lock.acquire_lock lock;
   let node = { node_prev = seq; node_next = seq.next; node_data = data; node_active = true } in
   seq.next.prev <- seq_of_node node;
   seq.next <- seq_of_node node;
+  Lwt_lock.release_lock lock;
   node
 
 let add_r data seq =
+  Lwt_lock.acquire_lock lock;
   let node = { node_prev = seq.prev; node_next = seq; node_data = data; node_active = true } in
   seq.prev.next <- seq_of_node node;
   seq.prev <- seq_of_node node;
+  Lwt_lock.release_lock lock;
   node
 
 let take_l seq =
   if is_empty seq then
     raise Empty
   else begin
+    Lwt_lock.acquire_lock lock;
     let node = node_of_seq seq.next in
     remove node;
+    Lwt_lock.release_lock lock;
     node.node_data
   end
 
@@ -86,8 +99,10 @@ let take_r seq =
   if is_empty seq then
     raise Empty
   else begin
+    Lwt_lock.acquire_lock lock;
     let node = node_of_seq seq.prev in
     remove node;
+    Lwt_lock.release_lock lock;
     node.node_data
   end
 
@@ -110,20 +125,24 @@ let take_opt_r seq =
   end
 
 let transfer_l s1 s2 =
+  Lwt_lock.acquire_lock lock;
   s2.next.prev <- s1.prev;
   s1.prev.next <- s2.next;
   s2.next <- s1.next;
   s1.next.prev <- s2;
   s1.prev <- s1;
-  s1.next <- s1
+  s1.next <- s1;
+  Lwt_lock.release_lock lock
 
 let transfer_r s1 s2 =
+  Lwt_lock.acquire_lock lock;
   s2.prev.next <- s1.next;
   s1.next.prev <- s2.prev;
   s2.prev <- s1.prev;
   s1.prev.next <- s2;
   s1.prev <- s1;
-  s1.next <- s1
+  s1.next <- s1;
+  Lwt_lock.release_lock lock
 
 let iter_l f seq =
   let rec loop curr =

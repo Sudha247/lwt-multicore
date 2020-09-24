@@ -20,11 +20,11 @@ let max_domains : int ref = ref 0
 (* Size of the waiting queue: *)
 let max_domains_queued = ref 128
 
-let get_max_number_of_threads_queued _ =
+let get_max_number_of_domains_queued _ =
   !max_domains_queued
 
-let set_max_number_of_threads_queued n =
-  if n < 0 then invalid_arg "Lwt_preemptive.set_max_number_of_threads_queued";
+let set_max_number_of_domains_queued n =
+  if n < 0 then invalid_arg "Lwt_preemptive.set_max_number_of_domains_queued";
   max_domains_queued := n
 
 let domains_count = ref 0
