@@ -5,7 +5,7 @@
 
 (** This module allows to mix multicore parallelism with [Lwt]
     cooperative threads. It maintains an extensible pool of domains 
-    to which you can detach computations.
+    to which you can detach computations. *)
 
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   (** [detach f x] runs the computation [f x] in a separate domain in parallel.
