@@ -84,7 +84,7 @@ let set_bounds (min, max) =
        C.send worker.task_chan Quit
     done;
   end;
-  let diff = max - !domains_count in
+  let diff = min - !domains_count in
   min_domains := min;
   max_domains := max;
 
