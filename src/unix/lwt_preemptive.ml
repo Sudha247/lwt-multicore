@@ -130,9 +130,9 @@ let detach f args =
     add_worker worker;
     Lwt.return_unit) (*add worker*)
 
-let nbthreads () = !domains_count
-let nbthreadsqueued () = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
-let nbthreadsbusy () = !domains_count - Queue.length workers
+let nbdomains () = !domains_count
+let nbdomainsqueued () = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
+let nbdomainsbusy () = !domains_count - Queue.length workers
 (* +-----------------------------------------------------------------+
    | Running Lwt threads in the main domain                          |
    +-----------------------------------------------------------------+ *)
