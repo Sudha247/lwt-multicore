@@ -49,6 +49,8 @@ type 'a t = {
   (* Threads waiting for a value *)
 }
 
+let lock = Lwt_lock.create_lock ()
+
 let create_empty () =
   { mvar_contents = None;
     writers = Lwt_sequence.create ();
@@ -60,6 +62,7 @@ let create v =
     readers = Lwt_sequence.create () }
 
 let put mvar v =
+  Lwt_lock.acquire_lock lock;
   match mvar.mvar_contents with
   | None ->
     begin match Lwt_sequence.take_opt_l mvar.readers with
@@ -68,11 +71,13 @@ let put mvar v =
       | Some w ->
         Lwt.wakeup_later w v
     end;
+    Lwt_lock.release_lock lock;
     Lwt.return_unit
   | Some _ ->
     let (res, w) = Lwt.task () in
     let node = Lwt_sequence.add_r (v, w) mvar.writers in
     Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+    Lwt_lock.release_lock lock;
     res
 
 let next_writer mvar =
@@ -86,7 +91,9 @@ let next_writer mvar =
 let take_available mvar =
   match mvar.mvar_contents with
   | Some v ->
+    Lwt_lock.acquire_lock lock;
     next_writer mvar;
+    Lwt_lock.release_lock lock;
     Some v
   | None ->
     None
