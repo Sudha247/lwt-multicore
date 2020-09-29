@@ -18,18 +18,25 @@ type t = { mutable locked : bool; mutable waiters : unit Lwt.u Lwt_sequence.t  }
 
 let create () = { locked = false; waiters = Lwt_sequence.create () }
 
+let l = Lwt_lock.create_lock ()
+
 let lock m =
   if m.locked then
     (Lwt.add_task_r [@ocaml.warning "-3"]) m.waiters
   else begin
+    Lwt_lock.acquire_lock l;
     m.locked <- true;
+    Lwt_lock.release_lock l;
     Lwt.return_unit
   end
 
 let unlock m =
   if m.locked then begin
-    if Lwt_sequence.is_empty m.waiters then
-      m.locked <- false
+    if Lwt_sequence.is_empty m.waiters then begin 
+      Lwt_lock.acquire_lock l;
+      m.locked <- false;
+      Lwt_lock.release_lock l
+    end
     else
       (* We do not use [Lwt.wakeup] here to avoid a stack overflow
          when unlocking a lot of threads. *)
