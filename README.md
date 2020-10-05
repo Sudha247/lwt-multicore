@@ -2,7 +2,11 @@
 
 This is a fork of [Lwt](https://github.com/ocsigen/lwt) with added
 support for CPU parallelism with Multicore OCaml provided via the
-`Lwt_preemptive` module.
+`Lwt_preemptive` module. 
+
+A blog post with a high level overview of this repo is here:
+https://sudha247.github.io/2020/10/01/lwt-multicore/
+
 
 ### Running on multiple cores
 
