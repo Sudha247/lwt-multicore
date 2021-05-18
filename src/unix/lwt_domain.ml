@@ -24,7 +24,7 @@ let get_max_number_of_domains_queued _ =
   !max_domains_queued
 
 let set_max_number_of_domains_queued n =
-  if n < 0 then invalid_arg "Lwt_preemptive.set_max_number_of_domains_queued";
+  if n < 0 then invalid_arg "Lwt_domain.set_max_number_of_domains_queued";
   max_domains_queued := n
 
 let domains_count = ref 0
@@ -77,7 +77,7 @@ let get_worker () =
 let get_bounds () = (!min_domains, !max_domains)
 
 let set_bounds (min, max) = 
-  if min < 0 || max < min then invalid_arg "Lwt_preemptive.set_bounds";
+  if min < 0 || max < min then invalid_arg "Lwt_domain.set_bounds";
   if (max < !domains_count) then begin
     for _i = 1 to (!domains_count - max) do 
        let worker = Queue.take workers in 
@@ -104,7 +104,7 @@ let simple_init () =
     set_bounds (0, 4)
   end 
 
-let init_result = Result.Error (Failure "Lwt_preemptive.detach")
+let init_result = Result.Error (Failure "Lwt_domain.detach")
 
 let detach f args =
   simple_init (); (*Initialise 4 domains*)

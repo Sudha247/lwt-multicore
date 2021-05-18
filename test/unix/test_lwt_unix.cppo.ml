@@ -1069,6 +1069,18 @@ let lwt_preemptive_tests = [
   end;
 ]
 
+let lwt_domain_tests = [
+  test "run_in_main_domain" begin fun () ->
+    let f () =
+      Lwt_domain.run_in_main (fun () ->
+        Lwt_unix.sleep 0.01 >>= fun () ->
+        Lwt.return 42)
+    in
+    Lwt_domain.detach f () >>= fun x ->
+    Lwt.return (x = 42)
+  end;
+]
+
 let getlogin_works =
   if Sys.win32 then
     false
@@ -1175,7 +1187,9 @@ let pread_tests ~blocking =
 
 let suite =
   suite "lwt_unix"
-    (wait_tests @
+    (
+     (* lwt_domain_tests @ *)
+     wait_tests @
      openfile_tests @
      utimes_tests @
      readdir_tests @
