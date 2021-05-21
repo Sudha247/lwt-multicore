@@ -39,7 +39,7 @@ module Lwt_sequence = Lwt_sequence
 [@@@ocaml.warning "+3"]
 
 type 'a t = {
-  mutable mvar_contents : 'a option;
+  mutable mvar_contents : 'a option Atomic.t;
   (* Current contents *)
 
   writers : ('a * unit Lwt.u) Lwt_sequence.t;
@@ -50,21 +50,21 @@ type 'a t = {
 }
 
 let create_empty () =
-  { mvar_contents = None;
+  { mvar_contents = Atomic.make None;
     writers = Lwt_sequence.create ();
     readers = Lwt_sequence.create () }
 
 let create v =
-  { mvar_contents = Some v;
+  { mvar_contents = Atomic.make (Some v);
     writers = Lwt_sequence.create ();
     readers = Lwt_sequence.create () }
 
 let put mvar v =
-  match mvar.mvar_contents with
+  match Atomic.get mvar.mvar_contents with
   | None ->
     begin match Lwt_sequence.take_opt_l mvar.readers with
       | None ->
-        mvar.mvar_contents <- Some v
+        Atomic.set mvar.mvar_contents (Some v)
       | Some w ->
         Lwt.wakeup_later w v
     end;
@@ -78,13 +78,13 @@ let put mvar v =
 let next_writer mvar =
   match Lwt_sequence.take_opt_l mvar.writers with
   | Some(v', w) ->
-    mvar.mvar_contents <- Some v';
+    Atomic.set mvar.mvar_contents (Some v');
     Lwt.wakeup_later w ()
   | None ->
-    mvar.mvar_contents <- None
+    Atomic.set mvar.mvar_contents None
 
 let take_available mvar =
-  match mvar.mvar_contents with
+  match Atomic.get mvar.mvar_contents with
   | Some v ->
     next_writer mvar;
     Some v
@@ -97,6 +97,6 @@ let take mvar =
   | None -> (Lwt.add_task_r [@ocaml.warning "-3"]) mvar.readers
 
 let is_empty mvar =
-  match mvar.mvar_contents with
+  match Atomic.get mvar.mvar_contents with
   | Some _ -> false
   | None -> true

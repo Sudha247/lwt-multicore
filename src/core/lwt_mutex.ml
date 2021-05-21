@@ -14,22 +14,22 @@ module Lwt_sequence = Lwt_sequence
 
 open Lwt.Infix
 
-type t = { mutable locked : bool; mutable waiters : unit Lwt.u Lwt_sequence.t  }
+type t = { locked : bool Atomic.t; waiters : unit Lwt.u Lwt_sequence.t  }
 
-let create () = { locked = false; waiters = Lwt_sequence.create () }
+let create () = { locked = Atomic.make false; waiters = Lwt_sequence.create () }
 
 let lock m =
-  if m.locked then
+  if Atomic.get m.locked then
     (Lwt.add_task_r [@ocaml.warning "-3"]) m.waiters
   else begin
-    m.locked <- true;
+    Atomic.set m.locked true;
     Lwt.return_unit
   end
 
 let unlock m =
-  if m.locked then begin
+  if Atomic.get m.locked then begin
     if Lwt_sequence.is_empty m.waiters then
-      m.locked <- false
+      Atomic.set m.locked false
     else
       (* We do not use [Lwt.wakeup] here to avoid a stack overflow
          when unlocking a lot of threads. *)
@@ -40,5 +40,5 @@ let with_lock m f =
   lock m >>= fun () ->
   Lwt.finalize f (fun () -> unlock m; Lwt.return_unit)
 
-let is_locked m = m.locked
+let is_locked m = Atomic.get m.locked
 let is_empty m = Lwt_sequence.is_empty m.waiters

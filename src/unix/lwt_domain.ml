@@ -77,11 +77,11 @@ let get_worker () =
 
 let get_bounds () = (!min_domains, !max_domains)
 
-let set_bounds (min, max) = 
+let set_bounds (min, max) =
   if min < 0 || max < min then invalid_arg "Lwt_domain.set_bounds";
   if (max < !domains_count) then begin
-    for _i = 1 to (!domains_count - max) do 
-       let worker = Queue.take workers in 
+    for _i = 1 to (!domains_count - max) do
+       let worker = Queue.take workers in
        C.send worker.task_chan Quit
     done;
   end;
@@ -108,9 +108,8 @@ let simple_init () =
 let init_result = Result.Error (Failure "Lwt_domain.detach")
 
 let detach f args =
-  simple_init (); (*Initialise 4 domains*)
+  simple_init ();
   let result = ref init_result in
-  (*Instead of notify, we can have a channel to send the result*)
   let task () =
     try
       result := Result.Ok (f args)
