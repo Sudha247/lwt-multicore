@@ -31,7 +31,7 @@ let domains_count = ref 0
 
 type task =
   Task of (int * (unit -> unit))
-  | Quit 
+  | Quit
 
 type dom = {
   task_chan : task C.t;
@@ -43,10 +43,10 @@ let workers : dom Queue.t = Queue.create ()
 let waiters : dom Lwt.u Lwt_sequence.t = Lwt_sequence.create ()
 
 let rec worker_loop worker =
-  match C.recv worker.task_chan with 
-  | Task (id, task) -> 
-      task ();  
-      Lwt_unix.send_notification id; 
+  match C.recv worker.task_chan with
+  | Task (id, task) ->
+      task ();
+      Lwt_unix.send_notification id;
       worker_loop worker
   | Quit -> ()
 
@@ -56,6 +56,7 @@ let make_worker () =
     task_chan = C.make_bounded 0;
     domain = Domain.spawn (fun _ -> ())
   } in
+  Domain.join worker.domain;
   worker.domain <- Domain.spawn(fun _ -> worker_loop worker);
   worker
 
@@ -88,21 +89,21 @@ let set_bounds (min, max) =
   min_domains := min;
   max_domains := max;
 
-  for _i = 1 to diff do 
+  for _i = 1 to diff do
     add_worker (make_worker ())
   done
 
-let initialized = ref false 
+let initialized = ref false
 
-let init min max _errlog = 
+let init min max _errlog =
   initialized := true;
-  set_bounds (min, max) 
+  set_bounds (min, max)
 
-let simple_init () = 
+let simple_init () =
   if not !initialized then begin
     initialized := true;
     set_bounds (0, 4)
-  end 
+  end
 
 let init_result = Result.Error (Failure "Lwt_domain.detach")
 
@@ -128,7 +129,7 @@ let detach f args =
     waiter)
   (fun () ->
     add_worker worker;
-    Lwt.return_unit) (*add worker*)
+    Lwt.return_unit)
 
 let nbdomains () = !domains_count
 let nbdomainsqueued () = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
@@ -140,16 +141,16 @@ let nbdomainsbusy () = !domains_count - Queue.length workers
 (* Jobs to be run in the main domain*)
 let jobs = C.make_unbounded ()
 
-let job_notification = 
+let job_notification =
   Lwt_unix.make_notification
     (fun () ->
-      let thunk = C.recv jobs in 
+      let thunk = C.recv jobs in
       ignore (thunk ()))
 
 let run_in_main f =
-  let res = ref init_result in 
-  let job () = 
-    Lwt.try_bind f 
+  let res = ref init_result in
+  let job () =
+    Lwt.try_bind f
       (fun ret -> Lwt.return (Result.Ok ret))
       (fun exn -> Lwt.return (Result.Error exn)) >>= fun result ->
     res := result;
@@ -159,6 +160,6 @@ let run_in_main f =
 
   Lwt_unix.send_notification job_notification;
   match !res with
-  | Result.Ok ret -> ret 
+  | Result.Ok ret -> ret
   | Result.Error exn -> raise exn
-  
+

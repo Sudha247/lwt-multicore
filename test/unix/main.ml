@@ -4,11 +4,11 @@
 open Tester
 
 let () =
-  Test.concurrent "unix" [
+  Test.run "unix" [
+    Test_lwt_process.suite;
     Test_lwt_unix.suite;
     Test_lwt_io.suite;
     Test_lwt_io_non_block.suite;
-    Test_lwt_process.suite;
     Test_lwt_engine.suite;
     Test_mcast.suite;
     Test_lwt_fmt.suite;

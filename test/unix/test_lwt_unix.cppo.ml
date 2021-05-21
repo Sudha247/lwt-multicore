@@ -1070,12 +1070,8 @@ let lwt_preemptive_tests = [
 ]
 
 let lwt_domain_tests = [
-  test "run_in_main_domain" begin fun () ->
-    let f () =
-      Lwt_domain.run_in_main (fun () ->
-        Lwt_unix.sleep 0.01 >>= fun () ->
-        Lwt.return 42)
-    in
+  test "run_in_domain" begin fun () ->
+    let f () = 40 + 2 in
     Lwt_domain.detach f () >>= fun x ->
     Lwt.return (x = 42)
   end;
@@ -1188,7 +1184,6 @@ let pread_tests ~blocking =
 let suite =
   suite "lwt_unix"
     (
-     (* lwt_domain_tests @ *)
      wait_tests @
      openfile_tests @
      utimes_tests @
@@ -1202,5 +1197,6 @@ let suite =
      lwt_preemptive_tests @
      lwt_user_tests @
      pread_tests ~blocking:true @
-     pread_tests ~blocking:false
+     pread_tests ~blocking:false @
+     lwt_domain_tests
     )
