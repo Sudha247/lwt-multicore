@@ -1069,14 +1069,6 @@ let lwt_preemptive_tests = [
   end;
 ]
 
-let lwt_domain_tests = [
-  test "run_in_domain" begin fun () ->
-    let f () = 40 + 2 in
-    Lwt_domain.detach f () >>= fun x ->
-    Lwt.return (x = 42)
-  end;
-]
-
 let getlogin_works =
   if Sys.win32 then
     false
@@ -1179,6 +1171,15 @@ let pread_tests ~blocking =
     (fun () ->
       Unix.unlink test_file;
       Lwt.return_true);
+]
+
+
+let lwt_domain_tests = [
+  test "run_in_domain" begin fun () ->
+    let f () = 40 + 2 in
+    Lwt_domain.detach f () >>= fun x ->
+    Lwt.return (x = 42)
+  end;
 ]
 
 let suite =

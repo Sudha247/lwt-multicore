@@ -141,7 +141,7 @@ let nbdomainsbusy () = !domains_count - Queue.length workers
 let jobs = C.make_unbounded ()
 
 let job_notification =
-  Lwt_unix.make_notification
+  Lwt_unix.make_notification ~once:true
     (fun () ->
       let thunk = C.recv jobs in
       ignore (thunk ()))
